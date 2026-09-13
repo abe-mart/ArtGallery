@@ -96,6 +96,15 @@ const Admin = () => {
         fetchData();
     }, []);
 
+    // Live demo: skip the password screen entirely. Nothing this token
+    // touches ever reaches the server - every write short-circuits into
+    // local state - so a placeholder is all it needs to be.
+    useEffect(() => {
+        if (settings.demoMode && !token) {
+            setToken('demo-mode');
+        }
+    }, [settings.demoMode, token]);
+
     // Every blob: URL created for a preview (including ones tucked away in
     // `history` for undo) is tracked here and released all at once when the
     // form closes, rather than the moment it stops being the *current*
@@ -501,7 +510,9 @@ const Admin = () => {
                                     <Plus className="w-4 h-4" /> Add Painting
                                 </Button>
                             )}
-                             <Button variant="outline" onClick={handleLogout}>Logout</Button>
+                             {!settings.demoMode && (
+                                 <Button variant="outline" onClick={handleLogout}>Logout</Button>
+                             )}
                         </div>
                     )}
                 </header>
