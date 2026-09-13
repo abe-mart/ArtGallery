@@ -75,6 +75,8 @@ export const DEFAULT_SETTINGS: Settings = {
     showPrices: true,
     pinEnabled: false,
     blockAiBots: true,
+    demoMode: false, // never actually stored/read - the settings.ts GET
+                      // handler always overwrites this from isDemoMode()
     pinVersion: 0,
 };
 
@@ -89,6 +91,12 @@ export async function saveSettings(partial: Partial<Settings>): Promise<Settings
     const updated = { ...current, ...partial };
     await configStore().setJSON(SETTINGS_KEY, updated);
     return updated;
+}
+
+// Full replace, used by backup import - unlike saveSettings(), this doesn't
+// merge with what's already there.
+export async function replaceSettings(settings: Settings): Promise<void> {
+    await configStore().setJSON(SETTINGS_KEY, settings);
 }
 
 export function toPublicSettings(settings: Settings): PublicSettings {
@@ -119,6 +127,14 @@ export async function getDbOrSeed() {
 
 export async function saveDb(data: unknown) {
     await dataStore().setJSON(DATA_KEY, data);
+}
+
+// Pulls the Blobs storage key out of a `/.netlify/functions/get-image?name=KEY`
+// image URL. Shared by the CRUD, export, and import handlers.
+export function imageKeyFromUrl(imageUrl: string | undefined): string | null {
+    if (!imageUrl) return null;
+    const match = imageUrl.match(/[?&]name=([^&]+)/);
+    return match ? decodeURIComponent(match[1]) : null;
 }
 
 // =============================================================================
@@ -292,6 +308,65 @@ export function isBlockedBot(userAgent: string | null): boolean {
     if (!userAgent) return false;
     return BLOCKED_BOT_PATTERNS.some((pattern) => pattern.test(userAgent));
 }
+
+// =============================================================================
+// DEMO MODE
+// =============================================================================
+// When DEMO_MODE=true (set by whoever deploys a public showcase site), every
+// write endpoint refuses with a friendly message and the gallery always
+// shows a small built-in set of public-domain paintings instead of real
+// stored data - so a demo deployment can't be defaced and never needs its
+// own Blob storage seeded.
+export function isDemoMode(): boolean {
+    return process.env.DEMO_MODE === 'true';
+}
+
+export function demoBlockedResponse(): Response {
+    return new Response(
+        JSON.stringify({ error: 'This is a live demo - changes are turned off. Deploy your own free copy to add your own art.' }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } },
+    );
+}
+
+// Public-domain paintings (Wikimedia Commons) used only in demo mode.
+export const DEMO_PAINTINGS = [
+    {
+        id: 1, title: 'The Starry Night', year: 1889, dimensions: '29in x 36in',
+        description: 'Vincent van Gogh, oil on canvas.',
+        imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg?width=1200',
+        collectionId: null, isAvailable: false, price: null, createdAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+        id: 2, title: 'The Great Wave off Kanagawa', year: 1831, dimensions: '10in x 15in',
+        description: 'Katsushika Hokusai, woodblock print.',
+        imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/The_Great_Wave_off_Kanagawa.jpg?width=1200',
+        collectionId: null, isAvailable: false, price: null, createdAt: '2024-01-02T00:00:00.000Z',
+    },
+    {
+        id: 3, title: 'Girl with a Pearl Earring', year: 1665, dimensions: '17in x 15in',
+        description: 'Johannes Vermeer, oil on canvas.',
+        imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/1665_Girl_with_a_Pearl_Earring.jpg?width=1200',
+        collectionId: null, isAvailable: false, price: null, createdAt: '2024-01-03T00:00:00.000Z',
+    },
+    {
+        id: 4, title: 'The Kiss', year: 1908, dimensions: '71in x 71in',
+        description: 'Gustav Klimt, oil and gold leaf on canvas.',
+        imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Gustav_Klimt_016.jpg?width=1200',
+        collectionId: null, isAvailable: false, price: null, createdAt: '2024-01-04T00:00:00.000Z',
+    },
+    {
+        id: 5, title: 'The Scream', year: 1893, dimensions: '36in x 29in',
+        description: 'Edvard Munch, tempera and pastel on cardboard.',
+        imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Edvard_Munch,_1893,_The_Scream,_oil,_tempera_and_pastel_on_cardboard,_91_x_73_cm,_National_Gallery_of_Norway.jpg?width=1200',
+        collectionId: null, isAvailable: false, price: null, createdAt: '2024-01-05T00:00:00.000Z',
+    },
+    {
+        id: 6, title: 'American Gothic', year: 1930, dimensions: '30in x 25in',
+        description: 'Grant Wood, oil on beaverboard.',
+        imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Grant_Wood_-_American_Gothic_-_Google_Art_Project.jpg?width=1200',
+        collectionId: null, isAvailable: false, price: null, createdAt: '2024-01-06T00:00:00.000Z',
+    },
+];
 
 export function tdmHeaders(blockAiBots: boolean): Record<string, string> {
     if (!blockAiBots) return {};

@@ -1,10 +1,13 @@
-import { getSettings, verifyPin, createViewerCookie, checkRateLimit, recordFailedAttempt, clearAttempts } from './_utils';
+import { getSettings, verifyPin, createViewerCookie, checkRateLimit, recordFailedAttempt, clearAttempts, isDemoMode } from './_utils';
 
 // Verifies a visitor-facing PIN (distinct from the admin password) and, on
 // success, sets a long-lived viewer cookie so the gallery unlocks.
 export default async function handler(req: Request) {
     if (req.method !== 'POST') {
         return new Response('Method Not Allowed', { status: 405 });
+    }
+    if (isDemoMode()) {
+        return new Response(JSON.stringify({ error: 'The live demo is never PIN-locked.' }), { status: 400 });
     }
 
     const rateLimit = await checkRateLimit(req, 'unlock');

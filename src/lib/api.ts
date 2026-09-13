@@ -153,5 +153,31 @@ export const api = {
          });
          if (!res.ok) throw new Error('Failed to create collection');
          return res.json();
+    },
+
+    async exportGallery(token: string): Promise<Blob> {
+        const res = await fetch(`${FUNCS_URL}/export`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || 'Failed to export gallery');
+        }
+        return res.blob();
+    },
+
+    async importGallery(file: File, token: string): Promise<{ paintings: number; images: number }> {
+        const formData = new FormData();
+        formData.append('backup', file);
+        const res = await fetch(`${FUNCS_URL}/import`, {
+            method: 'POST',
+            body: formData,
+            headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || 'Failed to import backup');
+        }
+        return res.json();
     }
 };

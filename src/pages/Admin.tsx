@@ -13,6 +13,7 @@ import IlluminationPicker from '../components/IlluminationPicker';
 import { convertImageToWebP } from '../lib/imageUtils';
 import { api } from '../lib/api';
 import AdminSettings from './AdminSettings';
+import { useSettings } from '../context/SettingsContext';
 
 interface Point {
     x: number;
@@ -38,6 +39,8 @@ const getImageDimensions = (file: File | Blob): Promise<{w: number, h: number}> 
 };
 
 const Admin = () => {
+    const { settings } = useSettings();
+
     // Auth State
     const [token, setToken] = useState<string | null>(localStorage.getItem('adminToken'));
     const [password, setPassword] = useState('');
@@ -375,7 +378,7 @@ const Admin = () => {
                     </div>
                     {!showForm && (
                         <div className="flex gap-4">
-                            {activeTab === 'paintings' && (
+                            {activeTab === 'paintings' && !settings.demoMode && (
                                 <Button onClick={() => { resetForm(); setShowForm(true); }} className="bg-charcoal text-white hover:bg-stone gap-2 shadow-md">
                                     <Plus className="w-4 h-4" /> Add Painting
                                 </Button>
@@ -384,6 +387,12 @@ const Admin = () => {
                         </div>
                     )}
                 </header>
+
+                {settings.demoMode && activeTab === 'paintings' && !showForm && (
+                    <div className="bg-stone/10 text-stone text-sm p-4 rounded-sm mb-8">
+                        This is a live demo showing sample paintings. Adding, editing, and deleting are turned off here.
+                    </div>
+                )}
 
                 {!showForm && (
                     <div className="flex gap-2 mb-8 border-b border-stone/10">
@@ -403,7 +412,7 @@ const Admin = () => {
                 )}
 
                 {activeTab === 'settings' && !showForm && (
-                    <AdminSettings token={token} />
+                    <AdminSettings token={token} onImported={fetchData} />
                 )}
 
                 {activeTab === 'paintings' && showForm && (
@@ -633,14 +642,16 @@ const Admin = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Button variant="ghost" size="icon" onClick={() => handleEdit(painting)} className="hover:text-amber-600">
-                                    <Edit2 className="w-4 h-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" onClick={() => handleDelete(painting.id)} className="hover:text-red-600">
-                                    <Trash2 className="w-4 h-4" />
-                                </Button>
-                            </div>
+                            {!settings.demoMode && (
+                                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button variant="ghost" size="icon" onClick={() => handleEdit(painting)} className="hover:text-amber-600">
+                                        <Edit2 className="w-4 h-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" onClick={() => handleDelete(painting.id)} className="hover:text-red-600">
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     ))}
                     {paintings.length === 0 && (

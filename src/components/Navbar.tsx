@@ -28,6 +28,16 @@ const Navbar = () => {
 
                     {/* Desktop Menu */}
                     <div className="hidden md:flex space-x-12 items-center">
+                        {settings.demoMode && (
+                            <a
+                                href="https://github.com/abe-mart/ArtGallery"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[10px] tracking-widest uppercase bg-charcoal text-paper px-3 py-1.5 rounded-full hover:opacity-80 transition-opacity"
+                            >
+                                Live Demo — Deploy Your Own
+                            </a>
+                        )}
                         {navLinks.map((link) => (
                             <Link
                                 key={link.name}

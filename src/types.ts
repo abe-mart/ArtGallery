@@ -43,6 +43,9 @@ export interface PublicSettings {
     showPrices: boolean;
     pinEnabled: boolean;
     blockAiBots: boolean;
+    // True only on a live demo deployment (DEMO_MODE=true). Set by the
+    // server based on an environment variable, never stored or editable.
+    demoMode: boolean;
 }
 
 export const DEFAULT_PUBLIC_SETTINGS: PublicSettings = {
@@ -61,4 +64,5 @@ export const DEFAULT_PUBLIC_SETTINGS: PublicSettings = {
     showPrices: true,
     pinEnabled: false,
     blockAiBots: true,
+    demoMode: false,
 };

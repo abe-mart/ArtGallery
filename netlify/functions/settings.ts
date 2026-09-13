@@ -1,11 +1,11 @@
-import { getSettings, saveSettings, toPublicSettings, verifyAdminAuth, hashPin } from './_utils';
+import { getSettings, saveSettings, toPublicSettings, verifyAdminAuth, hashPin, isDemoMode, demoBlockedResponse } from './_utils';
 
 export default async function handler(req: Request) {
     if (req.method === 'OPTIONS') return new Response(null);
 
     if (req.method === 'GET') {
         const settings = await getSettings();
-        return new Response(JSON.stringify(toPublicSettings(settings)), {
+        return new Response(JSON.stringify({ ...toPublicSettings(settings), demoMode: isDemoMode() }), {
             headers: {
                 'Content-Type': 'application/json',
                 'Cache-Control': 'public, max-age=30, stale-while-revalidate=120',
@@ -17,6 +17,7 @@ export default async function handler(req: Request) {
         if (!(await verifyAdminAuth(req.headers))) {
             return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
         }
+        if (isDemoMode()) return demoBlockedResponse();
         try {
             const body = await req.json();
             const current = await getSettings();

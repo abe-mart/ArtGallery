@@ -1,12 +1,6 @@
-import { verifyAdminAuth, getDbOrSeed, saveDb, imageStore } from './_utils';
+import { verifyAdminAuth, getDbOrSeed, saveDb, imageStore, imageKeyFromUrl, isDemoMode, demoBlockedResponse } from './_utils';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10MB
-
-function imageKeyFromUrl(imageUrl: string | undefined): string | null {
-    if (!imageUrl) return null;
-    const match = imageUrl.match(/[?&]name=([^&]+)/);
-    return match ? decodeURIComponent(match[1]) : null;
-}
 
 async function uploadImage(file: File): Promise<string> {
     if (file.size > MAX_IMAGE_BYTES) {
@@ -39,6 +33,7 @@ export default async function handler(req: Request) {
     if (!(await verifyAdminAuth(req.headers))) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
     }
+    if (isDemoMode()) return demoBlockedResponse();
 
     const url = new URL(req.url);
     const idParam = url.searchParams.get('id');

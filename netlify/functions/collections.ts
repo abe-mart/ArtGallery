@@ -1,4 +1,4 @@
-import { verifyAdminAuth, getDbOrSeed, saveDb, getSettings, hasGalleryAccess } from './_utils';
+import { verifyAdminAuth, getDbOrSeed, saveDb, getSettings, hasGalleryAccess, isDemoMode, demoBlockedResponse } from './_utils';
 
 export default async function handler(req: Request) {
     if (req.method === 'OPTIONS') return new Response(null);
@@ -7,6 +7,7 @@ export default async function handler(req: Request) {
     if (req.method !== 'GET' && !isAdmin) {
         return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
     }
+    if (req.method !== 'GET' && isDemoMode()) return demoBlockedResponse();
 
     if (req.method === 'POST') {
         try {

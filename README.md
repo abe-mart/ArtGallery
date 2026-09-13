@@ -23,6 +23,8 @@ it's the best way to show people what they're getting.)*
 - **An optional PIN** so only people you share it with can see the gallery
 - **Basic protection against AI scrapers** — known AI-training bots are
   blocked, and a "no AI training" signal is sent with every image
+- **One-click backup** — download everything (paintings, settings, images) as
+  a single file, and restore it just as easily
 - **$0/month hosting** on Netlify's free tier for a typical portfolio
 
 ## Deploying
@@ -58,28 +60,18 @@ your position clear:
 
 | Setting | What it does | What it doesn't do |
 |---|---|---|
-| **PIN gate** (Settings tab) | Requires a PIN before anyone — including bots — can see any painting or image data. This is the strongest option available. | Anyone you give the PIN to can share it further. |
+| **PIN gate** (Settings tab) | Requires a PIN before anyone — including bots — can see any painting or image data. This is the strongest option available; turn it on if you're not trying to be found by the public at all, e.g. a private gallery for family, clients, or a specific buyer. | Anyone you give the PIN to can share it further. |
 | **Block AI bots** (Settings tab, on by default) | Blocks well-known AI-training crawlers (GPTBot, ClaudeBot, CCBot, and others) from fetching your images or data, sends a `Tdm-Reservation` opt-out header, and publishes a `/robots.txt` disallowing them. | Only stops crawlers that identify themselves honestly — a determined scraper can lie about who it is. |
 | **Downscaled uploads** (automatic) | Your art is compressed and capped at 2400px on the long edge before it's stored — the original file on your computer never leaves your browser. | A capped image is still a usable image. |
 
-If you want to go further:
-- Put your domain behind [Cloudflare](https://www.cloudflare.com/) (free
-  plan) and turn on its **Block AI bots** setting for a second layer of
-  crawler blocking that works even for requests your app never sees.
-- Consider running your images through [Glaze](https://glaze.cs.uchicago.edu/)
-  before uploading — a tool designed to disrupt AI style-mimicry. It's an
-  extra manual step outside this app, and how well it holds up is genuinely
-  debated, but it's there if you want it.
-- Turn on the PIN if you're not trying to be found by the public at all —
-  e.g. a private gallery for family, clients, or a specific buyer.
-
 ## Backing up your gallery
 
-Your paintings and images live in Netlify Blobs, tied to your Netlify site.
-There's no built-in export yet (see [Roadmap](#roadmap)) — in the meantime,
-your admin **Download** button on each image saves the current processed
-version, and the source photos on your own computer are your backup of the
-originals.
+In the admin **Settings** tab, click **Export Gallery** to download a single
+file with everything in your gallery — paintings, settings, and images.
+Keep it somewhere safe. If you ever need to restore it (or move to a new
+deployment), use **Import Backup** with that same file — this replaces
+everything currently in the gallery, so it's meant for restoring, not merging
+in extra paintings.
 
 ## FAQ
 
@@ -106,31 +98,6 @@ this repository's releases for what changed.
 
 **I found a bug / have a feature idea.**
 Open an issue on this repository.
-
-## Roadmap
-
-Ideas that would make this better, not yet built:
-- Export/import for backing up your whole gallery
-- A separate low-resolution "grid" thumbnail apart from the viewing-size
-  image, so even less of the original resolution is exposed
-- A live demo site with public-domain artwork
-
-## Local development
-
-```bash
-npm install
-netlify dev
-```
-
-(Requires the [Netlify CLI](https://docs.netlify.com/cli/get-started/):
-`npm install -g netlify-cli`.) Create a `.env` file from `.env.example` and
-set `ADMIN_PASSWORD` for local testing.
-
-## Project structure
-
-- `src/` — React frontend (Vite + Tailwind)
-- `netlify/functions/` — serverless backend (auth, settings, PIN gate, CRUD)
-- `public/` — static assets
 
 ## License
 

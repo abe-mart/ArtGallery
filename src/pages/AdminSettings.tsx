@@ -13,7 +13,7 @@ const Field = ({ label, children }: { label: string; children: React.ReactNode }
 
 const inputClass = "w-full bg-[#faf9f7] border border-stone/20 p-3 rounded-sm focus:outline-none focus:ring-2 focus:ring-charcoal/20";
 
-const AdminSettings = ({ token }: { token: string }) => {
+const AdminSettings = ({ token, onImported }: { token: string; onImported: () => void }) => {
     const { refresh: refreshGlobalSettings } = useSettings();
     const [form, setForm] = useState<PublicSettings>(DEFAULT_PUBLIC_SETTINGS);
     const [loading, setLoading] = useState(true);
@@ -23,6 +23,10 @@ const AdminSettings = ({ token }: { token: string }) => {
     const [pin, setPin] = useState('');
     const [pinConfirm, setPinConfirm] = useState('');
     const [pinMessage, setPinMessage] = useState('');
+
+    const [exporting, setExporting] = useState(false);
+    const [importing, setImporting] = useState(false);
+    const [backupMessage, setBackupMessage] = useState('');
 
     useEffect(() => {
         api.getSettings().then(data => {
@@ -110,8 +114,59 @@ const AdminSettings = ({ token }: { token: string }) => {
         }
     };
 
+    const handleExport = async () => {
+        setExporting(true);
+        setBackupMessage('');
+        try {
+            const blob = await api.exportGallery(token);
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `gallery-backup-${new Date().toISOString().slice(0, 10)}.zip`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (err: unknown) {
+            setBackupMessage(err instanceof Error ? `Error: ${err.message}` : 'Failed to export gallery');
+        }
+        setExporting(false);
+    };
+
+    const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        e.target.value = ''; // allow re-selecting the same file later
+        if (!file) return;
+
+        if (!confirm('This replaces everything currently in your gallery - all paintings, collections, and settings - with what\'s in this backup file. This can\'t be undone. Continue?')) {
+            return;
+        }
+
+        setImporting(true);
+        setBackupMessage('');
+        try {
+            const result = await api.importGallery(file, token);
+            setBackupMessage(`Imported ${result.paintings} painting${result.paintings === 1 ? '' : 's'} and ${result.images} image${result.images === 1 ? '' : 's'}.`);
+            onImported();
+            const updated = await api.getSettings();
+            setForm(updated);
+            await refreshGlobalSettings();
+        } catch (err: unknown) {
+            setBackupMessage(err instanceof Error ? `Error: ${err.message}` : 'Failed to import backup');
+        }
+        setImporting(false);
+    };
+
     if (loading) {
         return <div className="text-center py-20 text-stone">Loading settings...</div>;
+    }
+
+    if (form.demoMode) {
+        return (
+            <div className="bg-white p-8 shadow-lg border border-stone/10 rounded-sm text-stone">
+                Settings can't be changed on this live demo. Deploy your own free copy to customize a gallery.
+            </div>
+        );
     }
 
     return (
@@ -226,6 +281,38 @@ const AdminSettings = ({ token }: { token: string }) => {
                 <p className="text-xs text-stone/70">
                     Changing or removing the PIN immediately signs out every visitor who had unlocked the gallery.
                     Your own admin login always has access, so you can't lock yourself out.
+                </p>
+            </section>
+
+            {/* Backup */}
+            <section className="bg-white p-8 shadow-lg border border-stone/10 rounded-sm space-y-6">
+                <div>
+                    <h2 className="text-xl font-serif mb-1">Backup</h2>
+                    <p className="text-sm text-stone">
+                        Download everything in your gallery - paintings, settings, and images - as one file.
+                        Keep it somewhere safe, or use it to move your gallery to a new deployment.
+                    </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-4">
+                    <Button type="button" variant="outline" onClick={handleExport} disabled={exporting}>
+                        {exporting ? 'Preparing...' : 'Export Gallery'}
+                    </Button>
+
+                    <label className="inline-block">
+                        <span className={`inline-flex items-center px-4 py-2 text-sm border border-stone/30 rounded-sm cursor-pointer hover:bg-stone/5 ${importing ? 'opacity-50 pointer-events-none' : ''}`}>
+                            {importing ? 'Importing...' : 'Import Backup'}
+                        </span>
+                        <input type="file" accept=".zip" onChange={handleImport} disabled={importing} className="hidden" />
+                    </label>
+                </div>
+
+                {backupMessage && (
+                    <p className={`text-sm ${backupMessage.startsWith('Error') ? 'text-red-500' : 'text-stone'}`}>{backupMessage}</p>
+                )}
+                <p className="text-xs text-stone/70">
+                    Importing a backup replaces everything currently in your gallery - it's meant for restoring a
+                    backup or moving to a new site, not merging in extra paintings.
                 </p>
             </section>
         </div>
