@@ -3,8 +3,7 @@
 A free, self-hosted online gallery for your artwork. Runs entirely on Netlify's
 free tier — no server to manage, no database to pay for, no code to write.
 
-*(Add a screenshot or GIF of your deployed gallery here — the live demo
-below is a good source for one.)*
+![Gallery wall showing six public-domain paintings](docs/screenshot.png)
 
 **[View the live demo →](https://art-gallery-demo-preview.netlify.app)**
 &nbsp;·&nbsp;
