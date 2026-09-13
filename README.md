@@ -30,24 +30,34 @@ free tier — no server to manage, no database to pay for, no code to write.
 
 ## Deploying
 
-You'll need a GitHub account and a Netlify account (you can sign up for
-Netlify with your GitHub account in one click). No coding required. This
-takes about 10 minutes.
+No coding required. This takes about 10 minutes, start to finish.
+
+### Before you start
+
+You'll need two free accounts: **GitHub** (where the code for your gallery
+lives) and **Netlify** (where it actually runs). If that sounds like a lot,
+it's really one step — when you click Deploy below, Netlify will offer to
+create your GitHub account for you right there if you don't already have
+one, then bring you straight back to finish. Neither costs anything.
+
+### Steps
 
 1. Click **[Deploy to Netlify](https://app.netlify.com/start/deploy?repository=https://github.com/abe-mart/ArtGallery)**.
-2. Netlify will ask to connect to GitHub and create a copy of this repo in
-   your own account. Approve that.
-3. You'll be asked for one setting: **`ADMIN_PASSWORD`**. Choose a password
+2. Sign in to Netlify, or create an account (Google or email both work).
+3. Netlify will ask to connect to GitHub and create a copy of this repo in
+   your own account. If you don't have a GitHub account yet, it'll offer to
+   create one for you here. Approve the connection either way.
+4. You'll be asked for one setting: **`ADMIN_PASSWORD`**. Choose a password
    you'll use to log into your admin panel — you can change it later.
-4. Click **Deploy site**. Netlify will build and publish your gallery —
+5. Click **Deploy site**. Netlify will build and publish your gallery —
    this takes a minute or two.
-5. Once it says **Published**, open your site. You'll see an empty gallery —
+6. Once it says **Published**, open your site. You'll see an empty gallery —
    that's expected, you haven't added any art yet.
-6. Go to `yoursite.netlify.app/admin` and log in with the password from
-   step 3.
-7. Use the **Settings** tab to set your name and site title, then use the
+7. Go to `yoursite.netlify.app/admin` and log in with the password from
+   step 4.
+8. Use the **Settings** tab to set your name and site title, then use the
    **Paintings** tab to upload your first piece.
-8. Optional: in Netlify's site settings, rename your site from something
+9. Optional: in Netlify's site settings, rename your site from something
    like `jolly-pika-123.netlify.app` to a name of your choosing, or connect
    a domain you already own.
 
