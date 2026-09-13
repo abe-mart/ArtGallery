@@ -57,9 +57,11 @@ GitHub account, so there's nothing extra to remember.
    step 4.
 8. Use the **Settings** tab to set your name and site title, then use the
    **Paintings** tab to upload your first piece.
-9. Optional: in Netlify's site settings, rename your site from something
-   like `jolly-pika-123.netlify.app` to a name of your choosing, or connect
-   a domain you already own.
+9. Optional: your site starts out at a random address like
+   `jolly-pika-123.netlify.app`. To change it, open your site in the
+   Netlify dashboard and go to **Site configuration > Domain management**.
+   There you can either pick a different `*.netlify.app` name for free, or
+   add a domain you already own.
 
 That's it — no database to set up, no server to configure.
 
