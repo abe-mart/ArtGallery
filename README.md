@@ -9,9 +9,10 @@ free tier — no server to manage, no database to pay for, no code to write.
 &nbsp;·&nbsp;
 **[Deploy your own gallery →](https://app.netlify.com/start/deploy?repository=https://github.com/abe-mart/ArtGallery)**
 
-> The button above deploys straight from this repository. If it 404s, the
-> repo may have moved or been renamed — see [Deploying](#deploying) below for
-> the manual steps.
+> The button above uses this repository as a starting template — Netlify
+> copies it into your own GitHub account and deploys that copy, not this one
+> directly. If it 404s, the repo may have moved or been renamed — see
+> [Deploying](#deploying) below for the manual steps.
 
 ## What you get
 
