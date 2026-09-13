@@ -3,9 +3,11 @@
 A free, self-hosted online gallery for your artwork. Runs entirely on Netlify's
 free tier — no server to manage, no database to pay for, no code to write.
 
-*(Add a screenshot or GIF of your deployed gallery here once you have one —
-it's the best way to show people what they're getting.)*
+*(Add a screenshot or GIF of your deployed gallery here — the live demo
+below is a good source for one.)*
 
+**[View the live demo →](https://art-gallery-demo-preview.netlify.app)**
+&nbsp;·&nbsp;
 **[Deploy your own gallery →](https://app.netlify.com/start/deploy?repository=https://github.com/abe-mart/ArtGallery)**
 
 > The button above deploys straight from this repository. If it 404s, the
