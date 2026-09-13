@@ -11,7 +11,7 @@ free tier — no server to manage, no database to pay for, no code to write.
 
 > The button above uses this repository as a starting template — Netlify
 > copies it into your own GitHub account and deploys that copy, not this one
-> directly. If it 404s, the repo may have moved or been renamed — see
+> directly. See
 > [Deploying](#deploying) below for the manual steps.
 
 ## What you get
