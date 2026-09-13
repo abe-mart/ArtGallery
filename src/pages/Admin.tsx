@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '../components/ui/button';
 import { Painting, Collection } from '../types';
-import { Trash2, Edit2, Plus, X, Move, Sun, Maximize, Check, Lightbulb, ArrowRight } from 'lucide-react';
+import { Trash2, Edit2, Plus, X, Move, Sun, Maximize, Check, Lightbulb, ArrowRight, Undo2 } from 'lucide-react';
 import { perspectiveCorrect } from '../lib/perspectiveCorrect';
 import { applyWhiteBalance } from '../lib/whiteBalance';
 import { meshWarp } from '../lib/meshWarp';
@@ -31,6 +31,15 @@ interface EdgePoints {
 // Guided steps a new photo walks through: crop/straighten it, then
 // optionally even out lighting, then optionally fix colors, then review.
 type WizardStep = 'crop' | 'lighting' | 'color' | 'review';
+
+// A snapshot taken right before each adjustment is applied, so it can be
+// undone - `step` is which wizard step to return to.
+interface HistoryEntry {
+    step: WizardStep;
+    image: File | null;
+    previewUrl: string | null;
+    originalUrl: string | null;
+}
 
 const getImageDimensions = (file: File | Blob): Promise<{w: number, h: number}> => {
     return new Promise((resolve) => {
@@ -74,6 +83,9 @@ const Admin = () => {
     // Editing an existing painting's details (without replacing the photo)
     // starts straight at 'review' - no need to re-walk an already-good photo.
     const [wizardStep, setWizardStep] = useState<WizardStep>('review');
+    // One entry per applied adjustment, most recent last - lets "Undo" step
+    // back through them one at a time.
+    const [history, setHistory] = useState<HistoryEntry[]>([]);
 
     const [message, setMessage] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
@@ -84,11 +96,21 @@ const Admin = () => {
         fetchData();
     }, []);
 
+    // Every blob: URL created for a preview (including ones tucked away in
+    // `history` for undo) is tracked here and released all at once when the
+    // form closes, rather than the moment it stops being the *current*
+    // preview - otherwise undoing would restore an already-revoked URL.
+    const blobUrlsRef = useRef<Set<string>>(new Set());
+    const trackBlobUrl = (url: string) => { blobUrlsRef.current.add(url); };
+    const revokeTrackedBlobUrls = () => {
+        blobUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
+        blobUrlsRef.current.clear();
+    };
     useEffect(() => {
-        return () => {
-            if (previewUrl && previewUrl.startsWith('blob:')) URL.revokeObjectURL(previewUrl);
-        };
-    }, [previewUrl]);
+        // Only on unmount - releases anything left over if the admin
+        // navigates away mid-edit without submitting or resetting.
+        return () => revokeTrackedBlobUrls();
+    }, []);
 
     const fetchData = () => {
         api.getPaintings().then(setPaintings).catch(console.error);
@@ -113,6 +135,7 @@ const Admin = () => {
     };
 
     const resetForm = () => {
+        revokeTrackedBlobUrls();
         setTitle('');
         setYear(new Date().getFullYear().toString());
         setSelectedCollectionId('');
@@ -127,6 +150,7 @@ const Admin = () => {
         setMessage('');
         setEditMode('none');
         setWizardStep('review');
+        setHistory([]);
         setIsProcessing(false);
     };
 
@@ -142,6 +166,7 @@ const Admin = () => {
         setOriginalUrl(imgUrl);
         setShowForm(true);
         setWizardStep('review');
+        setHistory([]);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -149,11 +174,13 @@ const Admin = () => {
         if (e.target.files && e.target.files.length > 0) {
             const file = e.target.files[0];
             const url = URL.createObjectURL(file);
+            trackBlobUrl(url);
             setPreviewUrl(url);
             setOriginalUrl(url);
             setImage(file);
             setEditMode('none');
             setWizardStep('crop');
+            setHistory([]);
             setMessage('');
         }
     };
@@ -197,8 +224,10 @@ const Admin = () => {
         try {
              const correctedImage = await perspectiveCorrect(sourceUrl, corners);
             if (correctedImage) {
+                setHistory(h => [...h, { step: 'crop', image, previewUrl, originalUrl }]);
                 setImage(correctedImage);
                 const newPreview = URL.createObjectURL(correctedImage);
+                trackBlobUrl(newPreview);
                 setPreviewUrl(newPreview);
                 setEditMode('none');
                 setWizardStep('lighting');
@@ -224,8 +253,10 @@ const Admin = () => {
         try {
             const dewarpedImage = await meshWarp(sourceUrl, edges);
             if (dewarpedImage) {
+                setHistory(h => [...h, { step: 'crop', image, previewUrl, originalUrl }]);
                 setImage(dewarpedImage);
                 const newPreview = URL.createObjectURL(dewarpedImage);
+                trackBlobUrl(newPreview);
                 setPreviewUrl(newPreview);
                 setEditMode('none');
                 setWizardStep('lighting');
@@ -250,8 +281,10 @@ const Admin = () => {
         try {
             const correctedImage = await applyWhiteBalance(sourceUrl, point);
             if (correctedImage) {
+                setHistory(h => [...h, { step: 'color', image, previewUrl, originalUrl }]);
                 setImage(correctedImage);
                 const newPreview = URL.createObjectURL(correctedImage);
+                trackBlobUrl(newPreview);
                 setPreviewUrl(newPreview);
                 setOriginalUrl(newPreview);
                 setEditMode('none');
@@ -277,8 +310,10 @@ const Admin = () => {
         try {
             const correctedImage = await illuminationCorrect(sourceUrl, points);
             if (correctedImage) {
+                setHistory(h => [...h, { step: 'lighting', image, previewUrl, originalUrl }]);
                 setImage(correctedImage);
                 const newPreview = URL.createObjectURL(correctedImage);
+                trackBlobUrl(newPreview);
                 setPreviewUrl(newPreview);
                 setOriginalUrl(newPreview);
                 setEditMode('none');
@@ -292,6 +327,18 @@ const Admin = () => {
             setMessage('Error correcting lighting.');
         }
         setIsProcessing(false);
+    };
+
+    // Reverts the most recently applied adjustment and returns to that step.
+    const handleUndo = () => {
+        if (history.length === 0) return;
+        const last = history[history.length - 1];
+        setImage(last.image);
+        setPreviewUrl(last.previewUrl);
+        setOriginalUrl(last.originalUrl);
+        setWizardStep(last.step);
+        setHistory(h => h.slice(0, -1));
+        setMessage('Undone.');
     };
 
     const handleDelete = async (id: number | string) => { // Updated to accept string for Netlify IDs
@@ -566,14 +613,9 @@ const Admin = () => {
                                             )}
 
                                             <div className="flex items-center gap-4 mt-4 pt-3 border-t border-stone/10">
-                                                {wizardStep === 'lighting' && (
-                                                    <button type="button" onClick={() => setWizardStep('crop')} className="text-xs text-stone hover:text-charcoal underline underline-offset-4">
-                                                        ‹ Back
-                                                    </button>
-                                                )}
-                                                {wizardStep === 'color' && (
-                                                    <button type="button" onClick={() => setWizardStep('lighting')} className="text-xs text-stone hover:text-charcoal underline underline-offset-4">
-                                                        ‹ Back
+                                                {history.length > 0 && (
+                                                    <button type="button" onClick={handleUndo} className="text-xs text-stone hover:text-charcoal underline underline-offset-4 inline-flex items-center gap-1">
+                                                        <Undo2 className="w-3 h-3" /> Undo last adjustment
                                                     </button>
                                                 )}
                                                 <button
@@ -588,11 +630,16 @@ const Admin = () => {
                                     )}
 
                                     {wizardStep === 'review' && (
-                                        <div className="mt-3 flex items-center gap-4 text-xs">
+                                        <div className="mt-3 flex flex-wrap items-center gap-4 text-xs">
                                             {image && <span className="text-green-700 font-medium">✓ Photo adjusted</span>}
                                             <button type="button" onClick={() => setWizardStep('crop')} className="text-stone hover:text-charcoal underline underline-offset-4">
                                                 Adjust this photo
                                             </button>
+                                            {history.length > 0 && (
+                                                <button type="button" onClick={handleUndo} className="text-stone hover:text-charcoal underline underline-offset-4 inline-flex items-center gap-1">
+                                                    <Undo2 className="w-3 h-3" /> Undo last adjustment
+                                                </button>
+                                            )}
                                             <button type="button" onClick={handleDownload} className="text-stone hover:text-charcoal underline underline-offset-4">
                                                 Save to device
                                             </button>
