@@ -35,18 +35,18 @@ No coding required. This takes about 10 minutes, start to finish.
 ### Before you start
 
 You'll need two free accounts: **GitHub** (where the code for your gallery
-lives) and **Netlify** (where it actually runs). If that sounds like a lot,
-it's really one step — when you click Deploy below, Netlify will offer to
-create your GitHub account for you right there if you don't already have
-one, then bring you straight back to finish. Neither costs anything.
+lives) and **Netlify** (where it actually runs). If you don't have a GitHub
+account yet, create one first at [github.com](https://github.com) — it takes
+a minute. Once you have it, you can sign in to Netlify using that same
+GitHub account, so there's nothing extra to remember.
 
 ### Steps
 
 1. Click **[Deploy to Netlify](https://app.netlify.com/start/deploy?repository=https://github.com/abe-mart/ArtGallery)**.
-2. Sign in to Netlify, or create an account (Google or email both work).
+2. Sign in to Netlify — the "Continue with GitHub" option is usually
+   easiest, or use Google or email instead.
 3. Netlify will ask to connect to GitHub and create a copy of this repo in
-   your own account. If you don't have a GitHub account yet, it'll offer to
-   create one for you here. Approve the connection either way.
+   your own account. Approve that.
 4. You'll be asked for one setting: **`ADMIN_PASSWORD`**. Choose a password
    you'll use to log into your admin panel — you can change it later.
 5. Click **Deploy site**. Netlify will build and publish your gallery —
@@ -65,7 +65,7 @@ That's it — no database to set up, no server to configure.
 
 ## Protecting your art
 
-No online gallery can make images fully uncopiable — anything a browser can
+No online gallery can make images impossible to copy — anything a browser can
 display, someone can screenshot. What this app does is raise the bar and make
 your position clear:
 
