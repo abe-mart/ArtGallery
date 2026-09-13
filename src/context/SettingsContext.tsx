@@ -6,12 +6,17 @@ interface SettingsContextValue {
     settings: PublicSettings;
     loading: boolean;
     refresh: () => Promise<void>;
+    // Applies a change to the rest of the site (nav, hero text, etc.)
+    // without a server round-trip - used by the live demo, where edits are
+    // real within the tab but never saved.
+    updateLocal: (partial: Partial<PublicSettings>) => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue>({
     settings: DEFAULT_PUBLIC_SETTINGS,
     loading: true,
     refresh: async () => {},
+    updateLocal: () => {},
 });
 
 export const SettingsProvider = ({ children }: { children: React.ReactNode }) => {
@@ -24,6 +29,10 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
         setLoading(false);
     }, []);
 
+    const updateLocal = useCallback((partial: Partial<PublicSettings>) => {
+        setSettings(prev => ({ ...prev, ...partial }));
+    }, []);
+
     useEffect(() => {
         refresh();
     }, [refresh]);
@@ -33,7 +42,7 @@ export const SettingsProvider = ({ children }: { children: React.ReactNode }) =>
     }, [settings.siteTitle]);
 
     return (
-        <SettingsContext.Provider value={{ settings, loading, refresh }}>
+        <SettingsContext.Provider value={{ settings, loading, refresh, updateLocal }}>
             {children}
         </SettingsContext.Provider>
     );

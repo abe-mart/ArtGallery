@@ -18,7 +18,7 @@ const Field = ({ label, hint, children }: { label: string; hint?: string; childr
 const inputClass = "w-full bg-[#faf9f7] border border-stone/20 p-3 rounded-sm focus:outline-none focus:ring-2 focus:ring-charcoal/20";
 
 const AdminSettings = ({ token, onImported }: { token: string; onImported: () => void }) => {
-    const { refresh: refreshGlobalSettings } = useSettings();
+    const { refresh: refreshGlobalSettings, updateLocal } = useSettings();
     const [form, setForm] = useState<PublicSettings>(DEFAULT_PUBLIC_SETTINGS);
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState('');
@@ -46,6 +46,17 @@ const AdminSettings = ({ token, onImported }: { token: string; onImported: () =>
     const handleSave = async () => {
         setSaving(true);
         setMessage('');
+
+        // Live demo: the fields are already editable and visually "stick"
+        // (they're just component state) - simulate a successful save
+        // without touching the server, which refuses writes here anyway.
+        if (form.demoMode) {
+            updateLocal(form);
+            setMessage("Saved! This is a live demo, so it's only visible in this tab and won't persist.");
+            setSaving(false);
+            return;
+        }
+
         try {
             const saved = await api.updateSettings({
                 siteTitle: form.siteTitle,
@@ -80,6 +91,16 @@ const AdminSettings = ({ token, onImported }: { token: string; onImported: () =>
             setPinMessage('PINs do not match.');
             return;
         }
+
+        if (form.demoMode) {
+            setForm(prev => ({ ...prev, pinEnabled: true }));
+            updateLocal({ pinEnabled: true });
+            setPin('');
+            setPinConfirm('');
+            setPinMessage("PIN set! This is a live demo, so it's only visible in this tab and won't persist. (The demo gallery itself never actually locks.)");
+            return;
+        }
+
         try {
             const saved = await api.updateSettings({ pin }, token);
             setForm(saved);
@@ -94,6 +115,13 @@ const AdminSettings = ({ token, onImported }: { token: string; onImported: () =>
 
     const handleTogglePin = async (enabled: boolean) => {
         setPinMessage('');
+
+        if (form.demoMode) {
+            setForm(prev => ({ ...prev, pinEnabled: enabled }));
+            updateLocal({ pinEnabled: enabled });
+            return;
+        }
+
         try {
             const saved = await api.updateSettings({ pinEnabled: enabled }, token);
             setForm(saved);
@@ -106,6 +134,14 @@ const AdminSettings = ({ token, onImported }: { token: string; onImported: () =>
     const handleClearPin = async () => {
         if (!confirm('Remove the PIN entirely? The gallery will become publicly viewable.')) return;
         setPinMessage('');
+
+        if (form.demoMode) {
+            setForm(prev => ({ ...prev, pinEnabled: false }));
+            updateLocal({ pinEnabled: false });
+            setPinMessage("PIN removed. This is a live demo, so it's only visible in this tab and won't persist.");
+            return;
+        }
+
         try {
             const saved = await api.updateSettings({ clearPin: true }, token);
             setForm(saved);
@@ -161,14 +197,6 @@ const AdminSettings = ({ token, onImported }: { token: string; onImported: () =>
 
     if (loading) {
         return <div className="text-center py-20 text-stone">Loading settings...</div>;
-    }
-
-    if (form.demoMode) {
-        return (
-            <div className="bg-white p-8 shadow-lg border border-stone/10 rounded-sm text-stone">
-                Settings can't be changed on this live demo. Deploy your own free copy to customize a gallery.
-            </div>
-        );
     }
 
     return (
@@ -292,26 +320,34 @@ const AdminSettings = ({ token, onImported }: { token: string; onImported: () =>
                     </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-4">
-                    <Button type="button" variant="outline" onClick={handleExport} disabled={exporting}>
-                        {exporting ? 'Preparing...' : 'Export Gallery'}
-                    </Button>
+                {form.demoMode ? (
+                    <p className="text-sm text-stone/70">
+                        Not available on the live demo, since there's nothing real to back up here.
+                    </p>
+                ) : (
+                    <>
+                        <div className="flex flex-wrap items-center gap-4">
+                            <Button type="button" variant="outline" onClick={handleExport} disabled={exporting}>
+                                {exporting ? 'Preparing...' : 'Export Gallery'}
+                            </Button>
 
-                    <label className="inline-block">
-                        <span className={`inline-flex items-center px-4 py-2 text-sm border border-stone/30 rounded-sm cursor-pointer hover:bg-stone/5 ${importing ? 'opacity-50 pointer-events-none' : ''}`}>
-                            {importing ? 'Importing...' : 'Import Backup'}
-                        </span>
-                        <input type="file" accept=".zip" onChange={handleImport} disabled={importing} className="hidden" />
-                    </label>
-                </div>
+                            <label className="inline-block">
+                                <span className={`inline-flex items-center px-4 py-2 text-sm border border-stone/30 rounded-sm cursor-pointer hover:bg-stone/5 ${importing ? 'opacity-50 pointer-events-none' : ''}`}>
+                                    {importing ? 'Importing...' : 'Import Backup'}
+                                </span>
+                                <input type="file" accept=".zip" onChange={handleImport} disabled={importing} className="hidden" />
+                            </label>
+                        </div>
 
-                {backupMessage && (
-                    <p className={`text-sm ${backupMessage.startsWith('Error') ? 'text-red-500' : 'text-stone'}`}>{backupMessage}</p>
+                        {backupMessage && (
+                            <p className={`text-sm ${backupMessage.startsWith('Error') ? 'text-red-500' : 'text-stone'}`}>{backupMessage}</p>
+                        )}
+                        <p className="text-xs text-stone/70">
+                            Importing a backup replaces everything currently in your gallery - it's meant for restoring a
+                            backup or moving to a new site, not merging in extra paintings.
+                        </p>
+                    </>
                 )}
-                <p className="text-xs text-stone/70">
-                    Importing a backup replaces everything currently in your gallery - it's meant for restoring a
-                    backup or moving to a new site, not merging in extra paintings.
-                </p>
             </section>
         </div>
     );

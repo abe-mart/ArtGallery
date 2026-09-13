@@ -187,6 +187,21 @@ const Admin = () => {
 
     const handleCreateCollection = async () => {
         if (!newCollectionName.trim() || !token) return;
+
+        if (settings.demoMode) {
+            const demoCollection: Collection = {
+                id: Date.now(),
+                name: newCollectionName,
+                slug: newCollectionName.toLowerCase().trim().replace(/\s+/g, '-'),
+            };
+            setCollections(prev => [...prev, demoCollection]);
+            setSelectedCollectionId(demoCollection.id.toString());
+            setNewCollectionName('');
+            setIsAddingCollection(false);
+            setMessage('Category created! (Demo only - not saved.)');
+            return;
+        }
+
         setIsProcessing(true);
         try {
             await api.createCollection(newCollectionName, token);
@@ -344,6 +359,12 @@ const Admin = () => {
     const handleDelete = async (id: number | string) => { // Updated to accept string for Netlify IDs
         if (!token) return;
         if (!confirm('Are you sure you want to delete this painting?')) return;
+
+        if (settings.demoMode) {
+            setPaintings(prev => prev.filter(p => p.id !== id));
+            return;
+        }
+
         try {
             await api.deletePainting(id, token);
             fetchPaintings();
@@ -360,6 +381,38 @@ const Admin = () => {
             return;
         }
         if (!token) return;
+
+        // Live demo: let people walk through the whole flow - including the
+        // photo wizard, which already runs entirely in the browser - but
+        // show the result only in this tab's memory instead of saving it.
+        // A reload pulls the fixed demo set back from the server.
+        if (settings.demoMode) {
+            setIsProcessing(true);
+            const demoPainting: Painting = {
+                id: formMode === 'edit' && isEditing ? Number(isEditing) : Date.now(),
+                title,
+                slug: title.toLowerCase().trim().replace(/\s+/g, '-'),
+                year: parseInt(year) || new Date().getFullYear(),
+                dimensions: '',
+                isAvailable: false,
+                imageUrl: previewUrl || '',
+                collectionId: selectedCollectionId ? parseInt(selectedCollectionId) : undefined,
+                collection: collections.find(c => c.id.toString() === selectedCollectionId),
+                createdAt: new Date().toISOString(),
+            };
+            if (formMode === 'add') {
+                setPaintings(prev => [demoPainting, ...prev]);
+            } else {
+                setPaintings(prev => prev.map(p => p.id === demoPainting.id ? demoPainting : p));
+            }
+            setMessage(`${formMode === 'add' ? 'Added' : 'Updated'}! This is a live demo, so it's only visible in this tab and disappears if you reload.`);
+            // This image is now "in use" by the demo list - don't revoke its
+            // blob URL when resetForm() clears everything else out.
+            if (previewUrl) blobUrlsRef.current.delete(previewUrl);
+            setTimeout(resetForm, 1500);
+            setIsProcessing(false);
+            return;
+        }
 
         setIsProcessing(true);
         setMessage('Saving...');
@@ -443,7 +496,7 @@ const Admin = () => {
                     </div>
                     {!showForm && (
                         <div className="flex gap-4">
-                            {activeTab === 'paintings' && !settings.demoMode && (
+                            {activeTab === 'paintings' && (
                                 <Button onClick={() => { resetForm(); setShowForm(true); }} className="bg-charcoal text-white hover:bg-stone gap-2 shadow-md">
                                     <Plus className="w-4 h-4" /> Add Painting
                                 </Button>
@@ -453,9 +506,11 @@ const Admin = () => {
                     )}
                 </header>
 
-                {settings.demoMode && activeTab === 'paintings' && !showForm && (
+                {settings.demoMode && !showForm && (
                     <div className="bg-stone/10 text-stone text-sm p-4 rounded-sm mb-8">
-                        This is a live demo showing sample paintings. Adding, editing, and deleting are turned off here.
+                        This is a live demo — feel free to add, edit, or delete paintings and change settings.
+                        Nothing is actually saved: it only shows in this browser tab, and disappears the next
+                        time you reload.
                     </div>
                 )}
 
@@ -720,19 +775,17 @@ const Admin = () => {
                                     </div>
                                 </div>
                             </div>
-                            {!settings.demoMode && (
-                                <div className="flex items-center gap-2">
-                                    <Button variant="ghost" size="icon" onClick={() => handleEdit(painting)} className="text-stone/60 hover:text-amber-600" aria-label={`Edit ${painting.title}`}>
-                                        <Edit2 className="w-4 h-4" />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" onClick={() => handleDelete(painting.id)} className="text-stone/60 hover:text-red-600" aria-label={`Delete ${painting.title}`}>
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                            )}
+                            <div className="flex items-center gap-2">
+                                <Button variant="ghost" size="icon" onClick={() => handleEdit(painting)} className="text-stone/60 hover:text-amber-600" aria-label={`Edit ${painting.title}`}>
+                                    <Edit2 className="w-4 h-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => handleDelete(painting.id)} className="text-stone/60 hover:text-red-600" aria-label={`Delete ${painting.title}`}>
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                            </div>
                         </div>
                     ))}
-                    {paintings.length === 0 && !showForm && !settings.demoMode && (
+                    {paintings.length === 0 && !showForm && (
                         <div className="max-w-lg mx-auto text-center py-12">
                             <h2 className="text-2xl font-serif text-charcoal mb-2">Welcome to your gallery!</h2>
                             <p className="text-stone text-sm mb-8">
@@ -777,11 +830,6 @@ const Admin = () => {
                             <Button onClick={() => { resetForm(); setShowForm(true); }} className="bg-charcoal text-white hover:bg-stone gap-2 shadow-md">
                                 <Plus className="w-4 h-4" /> Add Your First Painting
                             </Button>
-                        </div>
-                    )}
-                    {paintings.length === 0 && !showForm && settings.demoMode && (
-                        <div className="text-center py-12 text-stone">
-                            No paintings found.
                         </div>
                     )}
                 </div>
