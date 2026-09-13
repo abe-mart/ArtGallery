@@ -40,7 +40,7 @@ account yet, create one first at [github.com](https://github.com) — it takes
 a minute. Once you have it, you can sign in to Netlify using that same
 GitHub account, so there's nothing extra to remember.
 
-### Steps
+### Setup Steps
 
 1. Click **[Deploy to Netlify](https://app.netlify.com/start/deploy?repository=https://github.com/abe-mart/ArtGallery)**.
 2. Sign in to Netlify — the "Continue with GitHub" option is usually
