@@ -39,8 +39,6 @@ export interface PublicSettings {
     aboutQuote: string;
     aboutText: string;
     galleryIntro: string;
-    contactEmail: string;
-    showPrices: boolean;
     pinEnabled: boolean;
     blockAiBots: boolean;
     // True only on a live demo deployment (DEMO_MODE=true). Set by the
@@ -60,8 +58,6 @@ export const DEFAULT_PUBLIC_SETTINGS: PublicSettings = {
     aboutQuote: '"Every piece begins with a blank page and an idea."',
     aboutText: 'Tell your visitors about yourself here. Edit this in the Settings tab of your admin panel.',
     galleryIntro: 'A curated selection of original works.',
-    contactEmail: '',
-    showPrices: true,
     pinEnabled: false,
     blockAiBots: true,
     demoMode: false,

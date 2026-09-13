@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '../components/ui/button';
 import { Painting, Collection } from '../types';
-import { Trash2, Edit2, Plus, X, Move, Sun, Maximize, Check, Lightbulb, Download } from 'lucide-react';
+import { Trash2, Edit2, Plus, X, Move, Sun, Maximize, Check, Lightbulb, ArrowRight } from 'lucide-react';
 import { perspectiveCorrect } from '../lib/perspectiveCorrect';
 import { applyWhiteBalance } from '../lib/whiteBalance';
 import { meshWarp } from '../lib/meshWarp';
@@ -14,6 +14,7 @@ import { convertImageToWebP } from '../lib/imageUtils';
 import { api } from '../lib/api';
 import AdminSettings from './AdminSettings';
 import { useSettings } from '../context/SettingsContext';
+import Tooltip from '../components/Tooltip';
 
 interface Point {
     x: number;
@@ -26,6 +27,10 @@ interface EdgePoints {
     bottom: Point[];
     left: Point[];
 }
+
+// Guided steps a new photo walks through: crop/straighten it, then
+// optionally even out lighting, then optionally fix colors, then review.
+type WizardStep = 'crop' | 'lighting' | 'color' | 'review';
 
 const getImageDimensions = (file: File | Blob): Promise<{w: number, h: number}> => {
     return new Promise((resolve) => {
@@ -65,6 +70,10 @@ const Admin = () => {
 
     // Editing modes: 'none' | 'perspective' | 'dewarp' | 'whiteBalance' | 'illumination'
     const [editMode, setEditMode] = useState<'none' | 'perspective' | 'dewarp' | 'whiteBalance' | 'illumination'>('none');
+    // A newly-selected photo walks through crop -> lighting -> color -> review.
+    // Editing an existing painting's details (without replacing the photo)
+    // starts straight at 'review' - no need to re-walk an already-good photo.
+    const [wizardStep, setWizardStep] = useState<WizardStep>('review');
 
     const [message, setMessage] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
@@ -117,6 +126,7 @@ const Admin = () => {
         setShowForm(false);
         setMessage('');
         setEditMode('none');
+        setWizardStep('review');
         setIsProcessing(false);
     };
 
@@ -131,6 +141,7 @@ const Admin = () => {
         setPreviewUrl(imgUrl);
         setOriginalUrl(imgUrl);
         setShowForm(true);
+        setWizardStep('review');
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -142,7 +153,8 @@ const Admin = () => {
             setOriginalUrl(url);
             setImage(file);
             setEditMode('none');
-            setMessage('Image loaded. Use tools to edit before uploading.');
+            setWizardStep('crop');
+            setMessage('');
         }
     };
 
@@ -188,9 +200,9 @@ const Admin = () => {
                 setImage(correctedImage);
                 const newPreview = URL.createObjectURL(correctedImage);
                 setPreviewUrl(newPreview);
-                // setOriginalUrl(newPreview); // Original updated originalUrl too? Yes.
                 setEditMode('none');
-                setMessage('Straightened! Click UPLOAD to save.');
+                setWizardStep('lighting');
+                setMessage('Straightened!');
             } else {
                 setMessage('Correction failed - try adjusting corners.');
             }
@@ -207,7 +219,7 @@ const Admin = () => {
         if (!sourceUrl) return;
 
         setIsProcessing(true);
-        setMessage('Dewarping curved edges...');
+        setMessage('Fixing curved edges...');
 
         try {
             const dewarpedImage = await meshWarp(sourceUrl, edges);
@@ -215,15 +227,15 @@ const Admin = () => {
                 setImage(dewarpedImage);
                 const newPreview = URL.createObjectURL(dewarpedImage);
                 setPreviewUrl(newPreview);
-                setOriginalUrl(newPreview);
                 setEditMode('none');
-                setMessage('Dewarped! Click UPLOAD to save.');
+                setWizardStep('lighting');
+                setMessage('Fixed!');
             } else {
-                setMessage('Dewarp failed - try adjusting points.');
+                setMessage('Fix failed - try adjusting the points.');
             }
         } catch (e) {
             console.error(e);
-            setMessage('Error during dewarp.');
+            setMessage('Error fixing curved edges.');
         }
         setIsProcessing(false);
     };
@@ -233,7 +245,7 @@ const Admin = () => {
         if (!sourceUrl) return;
 
         setIsProcessing(true);
-        setMessage('Applying white balance...');
+        setMessage('Fixing colors...');
 
         try {
             const correctedImage = await applyWhiteBalance(sourceUrl, point);
@@ -241,15 +253,16 @@ const Admin = () => {
                 setImage(correctedImage);
                 const newPreview = URL.createObjectURL(correctedImage);
                 setPreviewUrl(newPreview);
-                setOriginalUrl(newPreview); 
+                setOriginalUrl(newPreview);
                 setEditMode('none');
-                setMessage('White balance applied! Click UPLOAD to save.');
+                setWizardStep('review');
+                setMessage('Colors fixed!');
             } else {
-                setMessage('White balance failed.');
+                setMessage('Color fix failed.');
             }
         } catch (e) {
             console.error(e);
-            setMessage('Error applying white balance.');
+            setMessage('Error fixing colors.');
         }
         setIsProcessing(false);
     };
@@ -259,7 +272,7 @@ const Admin = () => {
         if (!sourceUrl) return;
 
         setIsProcessing(true);
-        setMessage('Correcting lighting...');
+        setMessage('Evening out lighting...');
 
         try {
             const correctedImage = await illuminationCorrect(sourceUrl, points);
@@ -269,7 +282,8 @@ const Admin = () => {
                 setPreviewUrl(newPreview);
                 setOriginalUrl(newPreview);
                 setEditMode('none');
-                setMessage('Lighting evened out! Click UPLOAD to save.');
+                setWizardStep('color');
+                setMessage('Lighting evened out!');
             } else {
                 setMessage('Lighting correction failed.');
             }
@@ -363,6 +377,10 @@ const Admin = () => {
                         {authError && <p className="text-red-500 text-sm">{authError}</p>}
                         <Button type="submit" className="w-full">Login</Button>
                     </form>
+                    <p className="text-xs text-stone/60 text-center mt-6">
+                        Forgot your password? Change <code className="bg-stone/10 px-1 rounded">ADMIN_PASSWORD</code> in
+                        your Netlify site's Environment Variables, then redeploy.
+                    </p>
                 </div>
             </div>
         );
@@ -436,7 +454,10 @@ const Admin = () => {
 
                             {/* Category Selection */}
                             <div>
-                                <label className="block text-xs uppercase tracking-widest text-stone mb-2">Category (Collection)</label>
+                                <label className="block text-xs uppercase tracking-widest text-stone mb-2">
+                                    Category
+                                    <Tooltip text="Optional. Groups paintings together so visitors can filter by category on your gallery page - e.g. 'Landscapes' or 'Portraits'." />
+                                </label>
                                 {!isAddingCollection ? (
                                     <div className="flex gap-2">
                                         <select
@@ -488,85 +509,95 @@ const Admin = () => {
                                 </div>
                             ) : null}
 
-                            {/* Image Preview with Edit Tools */}
+                            {/* Image Preview + Guided Photo Adjustment Wizard */}
                             {previewUrl && editMode === 'none' && (
                                 <div className="mt-4">
                                     <div className="relative inline-block">
                                         <img src={previewUrl} alt="Preview" className="max-h-64 w-auto object-contain border border-stone/10 shadow-md rounded-sm" />
-
-                                        {/* Floating toolbar - 4 tools */}
-                                        <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 flex gap-1 bg-white px-2 py-1.5 rounded-full shadow-lg border border-stone/10">
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => setEditMode('perspective')}
-                                                className="gap-1 text-xs px-2"
-                                                title="Straighten & Crop - for flat paper with perspective distortion"
-                                            >
-                                                <Move className="w-3 h-3" />
-                                                Straighten
-                                            </Button>
-                                            <div className="w-px bg-stone/20" />
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => setEditMode('dewarp')}
-                                                className="gap-1 text-xs px-2"
-                                                title="Advanced Dewarp - for curved/warped paper edges"
-                                            >
-                                                <Maximize className="w-3 h-3" />
-                                                Dewarp
-                                            </Button>
-                                            <div className="w-px bg-stone/20" />
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => setEditMode('illumination')}
-                                                className="gap-1 text-xs px-2"
-                                                title="Even Lighting - correct shadows and uneven illumination"
-                                            >
-                                                <Lightbulb className="w-3 h-3" />
-                                                Lighting
-                                            </Button>
-                                            <div className="w-px bg-stone/20" />
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => setEditMode('whiteBalance')}
-                                                className="gap-1 text-xs px-2"
-                                                title="White Balance - click on white paper to correct colors"
-                                            >
-                                                <Sun className="w-3 h-3" />
-                                                White Bal
-                                            </Button>
-                                            <div className="w-px bg-stone/20" />
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={handleDownload}
-                                                className="gap-1 text-xs px-2"
-                                                title="Download current image at full resolution"
-                                            >
-                                                <Download className="w-3 h-3" />
-                                                Download
-                                            </Button>
-                                        </div>
-
-                                        {/* Edited indicator */}
-                                        {image && (
-                                            <div className="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded shadow">
-                                                ✓ Edited
-                                            </div>
-                                        )}
                                     </div>
-                                    <p className="text-xs text-stone mt-4 text-center">
-                                       Click image tools to adjust. Changes are saved on Upload.
-                                    </p>
+
+                                    {wizardStep !== 'review' && (
+                                        <div className="mt-4 bg-[#faf9f7] border border-stone/10 rounded-lg p-4 max-w-md">
+                                            <p className="text-[10px] uppercase tracking-widest text-stone/60 mb-1">
+                                                Step {wizardStep === 'crop' ? 1 : wizardStep === 'lighting' ? 2 : 3} of 3
+                                            </p>
+
+                                            {wizardStep === 'crop' && (
+                                                <>
+                                                    <h3 className="font-serif text-lg text-charcoal mb-1">Straighten or crop the photo?</h3>
+                                                    <p className="text-xs text-stone mb-3">Skip if it's already flat and square.</p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        <Button type="button" size="sm" onClick={() => setEditMode('perspective')} className="gap-1.5 bg-charcoal text-white hover:bg-stone">
+                                                            <Move className="w-3.5 h-3.5" /> Straighten
+                                                        </Button>
+                                                        <Tooltip text="For a photo taken at an angle - drag the corners to square it up." />
+                                                        <Button type="button" size="sm" variant="outline" onClick={() => setEditMode('dewarp')} className="gap-1.5">
+                                                            <Maximize className="w-3.5 h-3.5" /> Fix Curved Edges
+                                                        </Button>
+                                                        <Tooltip text="For paper that isn't lying flat - curled corners or a rolled canvas." />
+                                                    </div>
+                                                </>
+                                            )}
+
+                                            {wizardStep === 'lighting' && (
+                                                <>
+                                                    <h3 className="font-serif text-lg text-charcoal mb-1">Even out the lighting?</h3>
+                                                    <p className="text-xs text-stone mb-3">Skip if the lighting already looks even.</p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        <Button type="button" size="sm" onClick={() => setEditMode('illumination')} className="gap-1.5 bg-charcoal text-white hover:bg-stone">
+                                                            <Lightbulb className="w-3.5 h-3.5" /> Even Lighting
+                                                        </Button>
+                                                        <Tooltip text="Corrects shadows or a bright spot left by a camera flash." />
+                                                    </div>
+                                                </>
+                                            )}
+
+                                            {wizardStep === 'color' && (
+                                                <>
+                                                    <h3 className="font-serif text-lg text-charcoal mb-1">Fix the colors?</h3>
+                                                    <p className="text-xs text-stone mb-3">Skip if the colors already look accurate.</p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        <Button type="button" size="sm" onClick={() => setEditMode('whiteBalance')} className="gap-1.5 bg-charcoal text-white hover:bg-stone">
+                                                            <Sun className="w-3.5 h-3.5" /> Fix Colors
+                                                        </Button>
+                                                        <Tooltip text="Corrects colors that look too warm or cool. Click a white or gray part of the paper." />
+                                                    </div>
+                                                </>
+                                            )}
+
+                                            <div className="flex items-center gap-4 mt-4 pt-3 border-t border-stone/10">
+                                                {wizardStep === 'lighting' && (
+                                                    <button type="button" onClick={() => setWizardStep('crop')} className="text-xs text-stone hover:text-charcoal underline underline-offset-4">
+                                                        ‹ Back
+                                                    </button>
+                                                )}
+                                                {wizardStep === 'color' && (
+                                                    <button type="button" onClick={() => setWizardStep('lighting')} className="text-xs text-stone hover:text-charcoal underline underline-offset-4">
+                                                        ‹ Back
+                                                    </button>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setWizardStep(wizardStep === 'crop' ? 'lighting' : wizardStep === 'lighting' ? 'color' : 'review')}
+                                                    className="ml-auto text-xs text-stone hover:text-charcoal underline underline-offset-4 inline-flex items-center gap-1"
+                                                >
+                                                    Skip <ArrowRight className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {wizardStep === 'review' && (
+                                        <div className="mt-3 flex items-center gap-4 text-xs">
+                                            {image && <span className="text-green-700 font-medium">✓ Photo adjusted</span>}
+                                            <button type="button" onClick={() => setWizardStep('crop')} className="text-stone hover:text-charcoal underline underline-offset-4">
+                                                Adjust this photo
+                                            </button>
+                                            <button type="button" onClick={handleDownload} className="text-stone hover:text-charcoal underline underline-offset-4">
+                                                Save to device
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -643,11 +674,11 @@ const Admin = () => {
                                 </div>
                             </div>
                             {!settings.demoMode && (
-                                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Button variant="ghost" size="icon" onClick={() => handleEdit(painting)} className="hover:text-amber-600">
+                                <div className="flex items-center gap-2">
+                                    <Button variant="ghost" size="icon" onClick={() => handleEdit(painting)} className="text-stone/60 hover:text-amber-600" aria-label={`Edit ${painting.title}`}>
                                         <Edit2 className="w-4 h-4" />
                                     </Button>
-                                    <Button variant="ghost" size="icon" onClick={() => handleDelete(painting.id)} className="hover:text-red-600">
+                                    <Button variant="ghost" size="icon" onClick={() => handleDelete(painting.id)} className="text-stone/60 hover:text-red-600" aria-label={`Delete ${painting.title}`}>
                                         <Trash2 className="w-4 h-4" />
                                     </Button>
                                 </div>

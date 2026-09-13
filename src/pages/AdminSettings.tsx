@@ -3,10 +3,14 @@ import { Button } from '../components/ui/button';
 import { api } from '../lib/api';
 import { PublicSettings, DEFAULT_PUBLIC_SETTINGS } from '../types';
 import { useSettings } from '../context/SettingsContext';
+import Tooltip from '../components/Tooltip';
 
-const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
+const Field = ({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) => (
     <div>
-        <label className="block text-xs uppercase tracking-widest text-stone mb-2">{label}</label>
+        <label className="block text-xs uppercase tracking-widest text-stone mb-2">
+            {label}
+            {hint && <Tooltip text={hint} />}
+        </label>
         {children}
     </div>
 );
@@ -55,8 +59,6 @@ const AdminSettings = ({ token, onImported }: { token: string; onImported: () =>
                 aboutQuote: form.aboutQuote,
                 aboutText: form.aboutText,
                 galleryIntro: form.galleryIntro,
-                contactEmail: form.contactEmail,
-                showPrices: form.showPrices,
                 blockAiBots: form.blockAiBots,
             }, token);
             setForm(saved);
@@ -187,9 +189,6 @@ const AdminSettings = ({ token, onImported }: { token: string; onImported: () =>
                     <Field label="Copyright Line (footer)">
                         <input className={inputClass} value={form.copyrightName} onChange={e => update('copyrightName', e.target.value)} />
                     </Field>
-                    <Field label="Contact Email (optional)">
-                        <input className={inputClass} type="email" value={form.contactEmail} onChange={e => update('contactEmail', e.target.value)} />
-                    </Field>
                 </div>
             </section>
 
@@ -197,16 +196,16 @@ const AdminSettings = ({ token, onImported }: { token: string; onImported: () =>
             <section className="bg-white p-8 shadow-lg border border-stone/10 rounded-sm">
                 <h2 className="text-xl font-serif mb-6">Homepage & About Page</h2>
                 <div className="grid grid-cols-1 gap-6">
-                    <Field label="Hero Headline">
+                    <Field label="Hero Headline" hint="The large heading on your homepage.">
                         <input className={inputClass} value={form.heroHeadline} onChange={e => update('heroHeadline', e.target.value)} />
                     </Field>
-                    <Field label="Hero Subtext">
+                    <Field label="Hero Subtext" hint="A short line under the homepage headline.">
                         <input className={inputClass} value={form.heroSubtext} onChange={e => update('heroSubtext', e.target.value)} />
                     </Field>
-                    <Field label="Featured Quote">
+                    <Field label="Featured Quote" hint="A larger quote shown further down your homepage.">
                         <input className={inputClass} value={form.quoteText} onChange={e => update('quoteText', e.target.value)} />
                     </Field>
-                    <Field label="Gallery Wall Intro Text">
+                    <Field label="Gallery Wall Intro Text" hint="The short paragraph next to 'The Collection' on your gallery page.">
                         <textarea className={inputClass} rows={2} value={form.galleryIntro} onChange={e => update('galleryIntro', e.target.value)} />
                     </Field>
                     <Field label="About Page Headline">
@@ -225,12 +224,11 @@ const AdminSettings = ({ token, onImported }: { token: string; onImported: () =>
             <section className="bg-white p-8 shadow-lg border border-stone/10 rounded-sm space-y-4">
                 <h2 className="text-xl font-serif mb-2">Options</h2>
                 <label className="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" checked={form.showPrices} onChange={e => update('showPrices', e.target.checked)} className="w-4 h-4" />
-                    <span className="text-sm">Show prices on paintings</span>
-                </label>
-                <label className="flex items-center gap-3 cursor-pointer">
                     <input type="checkbox" checked={form.blockAiBots} onChange={e => update('blockAiBots', e.target.checked)} className="w-4 h-4" />
-                    <span className="text-sm">Block known AI-training crawlers (robots.txt + request blocking)</span>
+                    <span className="text-sm">
+                        Block known AI-training bots
+                        <Tooltip text="Refuses requests from crawlers like GPTBot and CCBot, and publishes a robots.txt asking them not to scrape your art. On by default; most people should leave this on." />
+                    </span>
                 </label>
             </section>
 

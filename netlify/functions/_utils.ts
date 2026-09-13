@@ -71,8 +71,6 @@ export const DEFAULT_SETTINGS: Settings = {
     aboutQuote: '"Every piece begins with a blank page and an idea."',
     aboutText: 'Tell your visitors about yourself here. Edit this in the Settings tab of your admin panel.',
     galleryIntro: 'A curated selection of original works.',
-    contactEmail: '',
-    showPrices: true,
     pinEnabled: false,
     blockAiBots: true,
     demoMode: false, // never actually stored/read - the settings.ts GET

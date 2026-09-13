@@ -26,12 +26,11 @@ export default async function handler(req: Request) {
             const stringFields = [
                 'siteTitle', 'artistName', 'subtitle', 'copyrightName',
                 'heroHeadline', 'heroSubtext', 'quoteText',
-                'aboutHeadline', 'aboutQuote', 'aboutText', 'galleryIntro', 'contactEmail',
+                'aboutHeadline', 'aboutQuote', 'aboutText', 'galleryIntro',
             ];
             for (const field of stringFields) {
                 if (typeof body[field] === 'string') update[field] = body[field];
             }
-            if (typeof body.showPrices === 'boolean') update.showPrices = body.showPrices;
             if (typeof body.blockAiBots === 'boolean') update.blockAiBots = body.blockAiBots;
 
             // PIN management: `pin: string` sets/changes it, `pinEnabled: false`
