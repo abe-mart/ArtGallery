@@ -1,0 +1,32 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[dev]
+  command = "npm run dev"
+  port = 8888
+  targetPort = 5173
+
+[functions]
+  directory = "netlify/functions"
+
+# Order matters: specific redirects must come before the SPA catch-all below.
+[[redirects]]
+  from = "/robots.txt"
+  to = "/.netlify/functions/robots"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Shown on the Netlify "Deploy to Netlify" button so a new owner is asked
+# for this the moment they deploy - no other setup required.
+[template.environment]
+  ADMIN_PASSWORD = "Choose a password for your admin panel at /admin. You can change it later in Netlify's Site Settings > Environment Variables."
