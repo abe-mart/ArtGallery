@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface Point {
@@ -17,6 +18,7 @@ interface DewarpPickerProps {
     imageSrc: string;
     onComplete: (edges: EdgePoints) => void;
     onCancel: () => void;
+    isProcessing?: boolean;
 }
 
 const POINTS_PER_EDGE = 5;
@@ -25,7 +27,7 @@ const POINTS_PER_EDGE = 5;
  * Component for selecting multiple control points along each edge
  * to define the curved boundary of a warped painting.
  */
-export const DewarpPicker: React.FC<DewarpPickerProps> = ({ imageSrc, onComplete, onCancel }) => {
+export const DewarpPicker: React.FC<DewarpPickerProps> = ({ imageSrc, onComplete, onCancel, isProcessing = false }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const imgRef = useRef<HTMLImageElement>(null);
     const [edges, setEdges] = useState<EdgePoints>({ top: [], right: [], bottom: [], left: [] });
@@ -148,6 +150,14 @@ export const DewarpPicker: React.FC<DewarpPickerProps> = ({ imageSrc, onComplete
 
     return (
         <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-8">
+            {isProcessing && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/60">
+                    <div className="flex flex-col items-center gap-3 text-white">
+                        <Loader2 className="w-8 h-8 animate-spin" />
+                        <p className="text-sm">Fixing curved edges…</p>
+                    </div>
+                </div>
+            )}
             <div className="flex flex-col items-center max-h-full max-w-full">
                 <div className="mb-4 text-white text-center">
                     <h3 className="text-xl font-serif mb-2">Advanced Dewarp</h3>
@@ -187,12 +197,13 @@ export const DewarpPicker: React.FC<DewarpPickerProps> = ({ imageSrc, onComplete
                 </div>
 
                 <div className="flex gap-4 mt-6">
-                    <Button variant="secondary" onClick={onCancel}>Cancel</Button>
+                    <Button variant="secondary" onClick={onCancel} disabled={isProcessing}>Cancel</Button>
                     <Button
                         onClick={handleComplete}
-                        className="bg-white text-black hover:bg-white/90"
+                        disabled={isProcessing}
+                        className="bg-white text-black hover:bg-white/90 gap-2"
                     >
-                        Apply Dewarp
+                        {isProcessing ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : 'Apply Dewarp'}
                     </Button>
                 </div>
             </div>

@@ -28,9 +28,52 @@ interface EdgePoints {
     left: Point[];
 }
 
-// Guided steps a new photo walks through: crop/straighten it, then
-// optionally even out lighting, then optionally fix colors, then review.
-type WizardStep = 'crop' | 'lighting' | 'color' | 'review';
+// Guided steps a new photo walks through: even out lighting, then fix
+// colors, then straighten/crop, then review. Order matters here - it's
+// also the order WIZARD_STEPS lists them in for the progress indicator.
+type WizardStep = 'lighting' | 'color' | 'crop' | 'review';
+
+const WIZARD_STEPS: { key: Exclude<WizardStep, 'review'>; label: string }[] = [
+    { key: 'lighting', label: 'Lighting' },
+    { key: 'color', label: 'Color' },
+    { key: 'crop', label: 'Straighten' },
+];
+
+// A small "1 -- 2 -- 3" progress indicator showing where a photo is in the
+// adjustment wizard - filled/checked steps are done, the current one is
+// highlighted, later ones are still muted.
+const WizardProgress = ({ current }: { current: WizardStep }) => {
+    const currentIndex = current === 'review' ? WIZARD_STEPS.length : WIZARD_STEPS.findIndex(s => s.key === current);
+    return (
+        <div className="flex items-center mb-4" role="list" aria-label="Photo adjustment steps">
+            {WIZARD_STEPS.map((step, i) => {
+                const isDone = i < currentIndex;
+                const isCurrent = i === currentIndex;
+                return (
+                    <React.Fragment key={step.key}>
+                        <div className="flex flex-col items-center" role="listitem" aria-current={isCurrent ? 'step' : undefined}>
+                            <div
+                                className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-medium transition-colors ${
+                                    isDone ? 'bg-charcoal text-white' :
+                                    isCurrent ? 'bg-charcoal text-white ring-2 ring-charcoal/25 ring-offset-2' :
+                                    'bg-stone/15 text-stone'
+                                }`}
+                            >
+                                {isDone ? <Check className="w-3 h-3" /> : i + 1}
+                            </div>
+                            <span className={`mt-1.5 text-[9px] uppercase tracking-wide whitespace-nowrap ${isCurrent ? 'text-charcoal font-medium' : 'text-stone/60'}`}>
+                                {step.label}
+                            </span>
+                        </div>
+                        {i < WIZARD_STEPS.length - 1 && (
+                            <div className={`flex-1 h-px mx-1.5 mb-4 transition-colors ${i < currentIndex ? 'bg-charcoal' : 'bg-stone/20'}`} />
+                        )}
+                    </React.Fragment>
+                );
+            })}
+        </div>
+    );
+};
 
 // A snapshot taken right before each adjustment is applied, so it can be
 // undone - `step` is which wizard step to return to.
@@ -79,7 +122,7 @@ const Admin = () => {
 
     // Editing modes: 'none' | 'perspective' | 'dewarp' | 'whiteBalance' | 'illumination'
     const [editMode, setEditMode] = useState<'none' | 'perspective' | 'dewarp' | 'whiteBalance' | 'illumination'>('none');
-    // A newly-selected photo walks through crop -> lighting -> color -> review.
+    // A newly-selected photo walks through lighting -> color -> crop -> review.
     // Editing an existing painting's details (without replacing the photo)
     // starts straight at 'review' - no need to re-walk an already-good photo.
     const [wizardStep, setWizardStep] = useState<WizardStep>('review');
@@ -188,7 +231,7 @@ const Admin = () => {
             setOriginalUrl(url);
             setImage(file);
             setEditMode('none');
-            setWizardStep('crop');
+            setWizardStep('lighting');
             setHistory([]);
             setMessage('');
         }
@@ -254,7 +297,7 @@ const Admin = () => {
                 trackBlobUrl(newPreview);
                 setPreviewUrl(newPreview);
                 setEditMode('none');
-                setWizardStep('lighting');
+                setWizardStep('review');
                 setMessage('Straightened!');
             } else {
                 setMessage('Correction failed - try adjusting corners.');
@@ -283,7 +326,7 @@ const Admin = () => {
                 trackBlobUrl(newPreview);
                 setPreviewUrl(newPreview);
                 setEditMode('none');
-                setWizardStep('lighting');
+                setWizardStep('review');
                 setMessage('Fixed!');
             } else {
                 setMessage('Fix failed - try adjusting the points.');
@@ -312,7 +355,7 @@ const Admin = () => {
                 setPreviewUrl(newPreview);
                 setOriginalUrl(newPreview);
                 setEditMode('none');
-                setWizardStep('review');
+                setWizardStep('crop');
                 setMessage('Colors fixed!');
             } else {
                 setMessage('Color fix failed.');
@@ -631,26 +674,7 @@ const Admin = () => {
 
                                     {wizardStep !== 'review' && (
                                         <div className="mt-4 bg-[#faf9f7] border border-stone/10 rounded-lg p-4 max-w-md">
-                                            <p className="text-[10px] uppercase tracking-widest text-stone/60 mb-1">
-                                                Step {wizardStep === 'crop' ? 1 : wizardStep === 'lighting' ? 2 : 3} of 3
-                                            </p>
-
-                                            {wizardStep === 'crop' && (
-                                                <>
-                                                    <h3 className="font-serif text-lg text-charcoal mb-1">Straighten or crop the photo?</h3>
-                                                    <p className="text-xs text-stone mb-3">Skip if it's already flat and square.</p>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        <Button type="button" size="sm" onClick={() => setEditMode('perspective')} className="gap-1.5 bg-charcoal text-white hover:bg-stone">
-                                                            <Move className="w-3.5 h-3.5" /> Straighten
-                                                        </Button>
-                                                        <Tooltip text="For a photo taken at an angle - drag the corners to square it up." />
-                                                        <Button type="button" size="sm" variant="outline" onClick={() => setEditMode('dewarp')} className="gap-1.5">
-                                                            <Maximize className="w-3.5 h-3.5" /> Fix Curved Edges
-                                                        </Button>
-                                                        <Tooltip text="For paper that isn't lying flat - curled corners or a rolled canvas." />
-                                                    </div>
-                                                </>
-                                            )}
+                                            <WizardProgress current={wizardStep} />
 
                                             {wizardStep === 'lighting' && (
                                                 <>
@@ -678,6 +702,23 @@ const Admin = () => {
                                                 </>
                                             )}
 
+                                            {wizardStep === 'crop' && (
+                                                <>
+                                                    <h3 className="font-serif text-lg text-charcoal mb-1">Straighten or crop the photo?</h3>
+                                                    <p className="text-xs text-stone mb-3">Skip if it's already flat and square.</p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        <Button type="button" size="sm" onClick={() => setEditMode('perspective')} className="gap-1.5 bg-charcoal text-white hover:bg-stone">
+                                                            <Move className="w-3.5 h-3.5" /> Straighten
+                                                        </Button>
+                                                        <Tooltip text="For a photo taken at an angle - drag the corners to square it up." />
+                                                        <Button type="button" size="sm" variant="outline" onClick={() => setEditMode('dewarp')} className="gap-1.5">
+                                                            <Maximize className="w-3.5 h-3.5" /> Fix Curved Edges
+                                                        </Button>
+                                                        <Tooltip text="For paper that isn't lying flat - curled corners or a rolled canvas." />
+                                                    </div>
+                                                </>
+                                            )}
+
                                             <div className="flex items-center gap-4 mt-4 pt-3 border-t border-stone/10">
                                                 {history.length > 0 && (
                                                     <button type="button" onClick={handleUndo} className="text-xs text-stone hover:text-charcoal underline underline-offset-4 inline-flex items-center gap-1">
@@ -686,7 +727,7 @@ const Admin = () => {
                                                 )}
                                                 <button
                                                     type="button"
-                                                    onClick={() => setWizardStep(wizardStep === 'crop' ? 'lighting' : wizardStep === 'lighting' ? 'color' : 'review')}
+                                                    onClick={() => setWizardStep(wizardStep === 'lighting' ? 'color' : wizardStep === 'color' ? 'crop' : 'review')}
                                                     className="ml-auto text-xs text-stone hover:text-charcoal underline underline-offset-4 inline-flex items-center gap-1"
                                                 >
                                                     Skip <ArrowRight className="w-3 h-3" />
@@ -698,7 +739,7 @@ const Admin = () => {
                                     {wizardStep === 'review' && (
                                         <div className="mt-3 flex flex-wrap items-center gap-4 text-xs">
                                             {image && <span className="text-green-700 font-medium">✓ Photo adjusted</span>}
-                                            <button type="button" onClick={() => setWizardStep('crop')} className="text-stone hover:text-charcoal underline underline-offset-4">
+                                            <button type="button" onClick={() => setWizardStep('lighting')} className="text-stone hover:text-charcoal underline underline-offset-4">
                                                 Adjust this photo
                                             </button>
                                             {history.length > 0 && (
@@ -734,6 +775,7 @@ const Admin = () => {
                         imageSrc={originalUrl || previewUrl}
                         onComplete={handlePerspectiveComplete}
                         onCancel={() => setEditMode('none')}
+                        isProcessing={isProcessing}
                     />
                 )}
 
@@ -743,6 +785,7 @@ const Admin = () => {
                         imageSrc={originalUrl || previewUrl}
                         onComplete={handleDewarpComplete}
                         onCancel={() => setEditMode('none')}
+                        isProcessing={isProcessing}
                     />
                 )}
 
@@ -752,6 +795,7 @@ const Admin = () => {
                         imageSrc={previewUrl}
                         onComplete={handleWhiteBalanceComplete}
                         onCancel={() => setEditMode('none')}
+                        isProcessing={isProcessing}
                     />
                 )}
 
@@ -761,6 +805,7 @@ const Admin = () => {
                         imageSrc={previewUrl}
                         onComplete={handleIlluminationComplete}
                         onCancel={() => setEditMode('none')}
+                        isProcessing={isProcessing}
                     />
                 )}
 

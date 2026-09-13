@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface Point {
@@ -10,6 +11,7 @@ interface IlluminationPickerProps {
     imageSrc: string;
     onComplete: (points: Point[]) => void;
     onCancel: () => void;
+    isProcessing?: boolean;
 }
 
 const CORNER_LABELS = ['Top-Left', 'Top-Right', 'Bottom-Right', 'Bottom-Left'];
@@ -19,7 +21,7 @@ const CORNER_COLORS = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6']; // red, ambe
  * Component for selecting 4 corner sample points for illumination correction.
  * User clicks on paper areas at each corner of the painting.
  */
-export const IlluminationPicker: React.FC<IlluminationPickerProps> = ({ imageSrc, onComplete, onCancel }) => {
+export const IlluminationPicker: React.FC<IlluminationPickerProps> = ({ imageSrc, onComplete, onCancel, isProcessing = false }) => {
     const imgRef = useRef<HTMLImageElement>(null);
     const [points, setPoints] = useState<(Point | null)[]>([null, null, null, null]);
     const [displayPoints, setDisplayPoints] = useState<(Point | null)[]>([null, null, null, null]);
@@ -74,6 +76,14 @@ export const IlluminationPicker: React.FC<IlluminationPickerProps> = ({ imageSrc
 
     return (
         <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-8">
+            {isProcessing && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/60">
+                    <div className="flex flex-col items-center gap-3 text-white">
+                        <Loader2 className="w-8 h-8 animate-spin" />
+                        <p className="text-sm">Evening out lighting…</p>
+                    </div>
+                </div>
+            )}
             <div className="flex flex-col items-center max-h-full max-w-full">
                 <div className="mb-4 text-white text-center">
                     <h3 className="text-xl font-serif mb-2">Even Lighting</h3>
@@ -157,20 +167,20 @@ export const IlluminationPicker: React.FC<IlluminationPickerProps> = ({ imageSrc
                 </div>
 
                 <div className="flex gap-4 mt-6">
-                    <Button variant="secondary" onClick={onCancel}>Cancel</Button>
+                    <Button variant="secondary" onClick={onCancel} disabled={isProcessing}>Cancel</Button>
                     <Button
                         variant="secondary"
                         onClick={handleUndo}
-                        disabled={currentIndex === 0}
+                        disabled={currentIndex === 0 || isProcessing}
                     >
                         Undo
                     </Button>
                     <Button
                         onClick={handleComplete}
-                        disabled={!allPointsSet}
-                        className="bg-white text-black hover:bg-white/90"
+                        disabled={!allPointsSet || isProcessing}
+                        className="bg-white text-black hover:bg-white/90 gap-2"
                     >
-                        Apply Lighting Correction
+                        {isProcessing ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : 'Apply Lighting Correction'}
                     </Button>
                 </div>
 

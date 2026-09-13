@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface Point {
@@ -10,12 +11,13 @@ interface WhiteBalancePickerProps {
     imageSrc: string;
     onComplete: (point: Point) => void;
     onCancel: () => void;
+    isProcessing?: boolean;
 }
 
 /**
  * Component for selecting a white reference point for white balance correction.
  */
-export const WhiteBalancePicker: React.FC<WhiteBalancePickerProps> = ({ imageSrc, onComplete, onCancel }) => {
+export const WhiteBalancePicker: React.FC<WhiteBalancePickerProps> = ({ imageSrc, onComplete, onCancel, isProcessing = false }) => {
     const imgRef = useRef<HTMLImageElement>(null);
     const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
     const [displayPoint, setDisplayPoint] = useState<Point | null>(null);
@@ -51,6 +53,14 @@ export const WhiteBalancePicker: React.FC<WhiteBalancePickerProps> = ({ imageSrc
 
     return (
         <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-8">
+            {isProcessing && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/60">
+                    <div className="flex flex-col items-center gap-3 text-white">
+                        <Loader2 className="w-8 h-8 animate-spin" />
+                        <p className="text-sm">Fixing colors…</p>
+                    </div>
+                </div>
+            )}
             <div className="flex flex-col items-center max-h-full max-w-full">
                 <div className="mb-4 text-white text-center">
                     <h3 className="text-xl font-serif mb-2">White Balance</h3>
@@ -100,13 +110,13 @@ export const WhiteBalancePicker: React.FC<WhiteBalancePickerProps> = ({ imageSrc
                 </div>
 
                 <div className="flex gap-4 mt-6">
-                    <Button variant="secondary" onClick={onCancel}>Cancel</Button>
+                    <Button variant="secondary" onClick={onCancel} disabled={isProcessing}>Cancel</Button>
                     <Button
                         onClick={handleComplete}
-                        disabled={!selectedPoint}
-                        className="bg-white text-black hover:bg-white/90"
+                        disabled={!selectedPoint || isProcessing}
+                        className="bg-white text-black hover:bg-white/90 gap-2"
                     >
-                        Apply White Balance
+                        {isProcessing ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : 'Apply White Balance'}
                     </Button>
                 </div>
             </div>

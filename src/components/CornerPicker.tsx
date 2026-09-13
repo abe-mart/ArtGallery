@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface Point {
@@ -10,13 +11,14 @@ interface CornerPickerProps {
     imageSrc: string;
     onComplete: (corners: Point[]) => void;
     onCancel: () => void;
+    isProcessing?: boolean;
 }
 
 /**
  * Component for selecting 4 corners on an image for perspective correction.
  * User clicks/drags 4 points: top-left, top-right, bottom-right, bottom-left
  */
-export const CornerPicker: React.FC<CornerPickerProps> = ({ imageSrc, onComplete, onCancel }) => {
+export const CornerPicker: React.FC<CornerPickerProps> = ({ imageSrc, onComplete, onCancel, isProcessing = false }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const imgRef = useRef<HTMLImageElement>(null);
     const [corners, setCorners] = useState<Point[]>([]);
@@ -82,6 +84,14 @@ export const CornerPicker: React.FC<CornerPickerProps> = ({ imageSrc, onComplete
 
     return (
         <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-8">
+            {isProcessing && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/60">
+                    <div className="flex flex-col items-center gap-3 text-white">
+                        <Loader2 className="w-8 h-8 animate-spin" />
+                        <p className="text-sm">Straightening & cropping…</p>
+                    </div>
+                </div>
+            )}
             <div className="flex flex-col items-center max-h-full max-w-full">
                 <div className="mb-4 text-white text-center">
                     <h3 className="text-xl font-serif mb-2">Straighten & Crop</h3>
@@ -139,13 +149,13 @@ export const CornerPicker: React.FC<CornerPickerProps> = ({ imageSrc, onComplete
                 </div>
 
                 <div className="flex gap-4 mt-6">
-                    <Button variant="secondary" onClick={onCancel}>Cancel</Button>
+                    <Button variant="secondary" onClick={onCancel} disabled={isProcessing}>Cancel</Button>
                     <Button
                         onClick={handleComplete}
-                        disabled={corners.length !== 4}
-                        className="bg-white text-black hover:bg-white/90"
+                        disabled={corners.length !== 4 || isProcessing}
+                        className="bg-white text-black hover:bg-white/90 gap-2"
                     >
-                        Apply Correction
+                        {isProcessing ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing…</> : 'Apply Correction'}
                     </Button>
                 </div>
             </div>
