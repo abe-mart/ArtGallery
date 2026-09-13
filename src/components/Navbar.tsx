@@ -13,6 +13,7 @@ const Navbar = () => {
     const navLinks = [
         { name: 'Gallery', path: '/' },
         { name: 'About', path: '/info' },
+        { name: 'Admin', path: '/admin' },
     ];
 
     const isActive = (path: string) => location.pathname === path;

@@ -103,6 +103,11 @@ variables**, edit `ADMIN_PASSWORD` to a new value, and redeploy (or trigger
 Yes — add it under **Domain management** in your Netlify site settings.
 Netlify provisions HTTPS for it automatically.
 
+**There's a "Powered by Netlify" badge on my site — can I remove it?**
+Yes. Go to **Site configuration > General > Powered by Netlify badge** in
+your Netlify dashboard and turn it off. It takes effect immediately, no
+redeploy needed.
+
 **How do I get updates to this template?**
 If the Deploy button created a real GitHub fork, GitHub's **Sync fork**
 button pulls in updates, and Netlify will redeploy automatically. If it
