@@ -347,15 +347,15 @@ export const DEMO_PAINTINGS = [
         collectionId: null, isAvailable: false, price: null, createdAt: '2024-01-03T00:00:00.000Z',
     },
     {
-        id: 4, title: 'The Kiss', year: 1908, dimensions: '71in x 71in',
-        description: 'Gustav Klimt, oil and gold leaf on canvas.',
-        imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Gustav_Klimt_016.jpg?width=1200',
+        id: 4, title: 'Mona Lisa', year: 1503, dimensions: '30in x 21in',
+        description: 'Leonardo da Vinci, oil on poplar panel.',
+        imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg?width=1200',
         collectionId: null, isAvailable: false, price: null, createdAt: '2024-01-04T00:00:00.000Z',
     },
     {
-        id: 5, title: 'The Scream', year: 1893, dimensions: '36in x 29in',
-        description: 'Edvard Munch, tempera and pastel on cardboard.',
-        imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Edvard_Munch,_1893,_The_Scream,_oil,_tempera_and_pastel_on_cardboard,_91_x_73_cm,_National_Gallery_of_Norway.jpg?width=1200',
+        id: 5, title: 'Wanderer above the Sea of Fog', year: 1818, dimensions: '38in x 29in',
+        description: 'Caspar David Friedrich, oil on canvas.',
+        imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Caspar_David_Friedrich_-_Wanderer_above_the_sea_of_fog.jpg?width=1200',
         collectionId: null, isAvailable: false, price: null, createdAt: '2024-01-05T00:00:00.000Z',
     },
     {
