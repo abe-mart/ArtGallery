@@ -329,9 +329,12 @@ const Gallery = () => {
             <div className="min-h-screen flex items-center justify-center text-center px-4" style={{ background: '#f8f7f5' }}>
                 <div className="max-w-md">
                     <h1 className="text-2xl font-serif text-charcoal mb-3">{settings.artistName}</h1>
-                    <p className="text-stone mb-2">Your gallery is ready.</p>
+                    <p className="text-stone mb-2">This gallery is just getting started.</p>
                     <p className="text-stone text-sm">
-                        Sign in at <span className="font-mono">/admin</span> to add your first painting.
+                        Please check back soon
+                        {settings.demoMode ? '.' : (
+                            <> — or if this is your site, <a href="/admin" className="underline underline-offset-4 hover:text-charcoal">sign in</a> to add your first painting.</>
+                        )}
                     </p>
                 </div>
             </div>

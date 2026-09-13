@@ -50,15 +50,21 @@ const Home = () => {
                             <h2 className="text-4xl text-charcoal mb-2">Featured Works</h2>
                             <div className="h-1 w-24 bg-water-blue/30 rounded-full"></div>
                         </div>
-                        <Button variant="link" asChild className="text-stone hover:text-charcoal hidden md:inline-flex">
-                            <Link to="/" className="flex items-center gap-2">
-                                View all works <ArrowRight className="h-4 w-4" />
-                            </Link>
-                        </Button>
+                        {featuredPaintings.length > 0 && (
+                            <Button variant="link" asChild className="text-stone hover:text-charcoal hidden md:inline-flex">
+                                <Link to="/" className="flex items-center gap-2">
+                                    View all works <ArrowRight className="h-4 w-4" />
+                                </Link>
+                            </Button>
+                        )}
                     </div>
 
                     {loading ? (
                         <div className="text-center py-20 text-stone font-sans tracking-wider animate-pulse">Loading gallery...</div>
+                    ) : featuredPaintings.length === 0 ? (
+                        <div className="text-center py-20 text-stone">
+                            No paintings yet — check back soon.
+                        </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 md:gap-16">
                             {featuredPaintings.map((painting) => (
@@ -79,11 +85,13 @@ const Home = () => {
                         </div>
                     )}
 
-                    <div className="mt-12 text-center md:hidden">
-                        <Button variant="outline" asChild className="w-full border-stone/30">
-                            <Link to="/">View all works</Link>
-                        </Button>
-                    </div>
+                    {featuredPaintings.length > 0 && (
+                        <div className="mt-12 text-center md:hidden">
+                            <Button variant="outline" asChild className="w-full border-stone/30">
+                                <Link to="/">View all works</Link>
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </section>
 

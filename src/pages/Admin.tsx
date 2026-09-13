@@ -732,9 +732,56 @@ const Admin = () => {
                             )}
                         </div>
                     ))}
-                    {paintings.length === 0 && (
+                    {paintings.length === 0 && !showForm && !settings.demoMode && (
+                        <div className="max-w-lg mx-auto text-center py-12">
+                            <h2 className="text-2xl font-serif text-charcoal mb-2">Welcome to your gallery!</h2>
+                            <p className="text-stone text-sm mb-8">
+                                It's empty for now — visitors see a friendly "just getting started" message
+                                until you add something. Here's how to get going:
+                            </p>
+
+                            <div className="space-y-5 text-left mb-8">
+                                <div className="flex gap-3">
+                                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-charcoal text-white text-xs flex items-center justify-center">1</span>
+                                    <div>
+                                        <p className="text-sm font-medium text-charcoal">Add your first painting</p>
+                                        <p className="text-xs text-stone">Upload a photo — you can straighten it, fix the lighting, or correct the colors right here.</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-stone/20 text-charcoal text-xs flex items-center justify-center">2</span>
+                                    <div>
+                                        <p className="text-sm font-medium text-charcoal">Make it yours</p>
+                                        <p className="text-xs text-stone">
+                                            Set your name, site title, and about page under{' '}
+                                            <button type="button" onClick={() => setActiveTab('settings')} className="underline underline-offset-4 hover:text-charcoal">
+                                                Settings
+                                            </button>.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-stone/20 text-charcoal text-xs flex items-center justify-center">3</span>
+                                    <div>
+                                        <p className="text-sm font-medium text-charcoal">Keep it private (optional)</p>
+                                        <p className="text-xs text-stone">
+                                            Require a PIN to view your gallery, also under{' '}
+                                            <button type="button" onClick={() => setActiveTab('settings')} className="underline underline-offset-4 hover:text-charcoal">
+                                                Settings
+                                            </button>.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <Button onClick={() => { resetForm(); setShowForm(true); }} className="bg-charcoal text-white hover:bg-stone gap-2 shadow-md">
+                                <Plus className="w-4 h-4" /> Add Your First Painting
+                            </Button>
+                        </div>
+                    )}
+                    {paintings.length === 0 && !showForm && settings.demoMode && (
                         <div className="text-center py-12 text-stone">
-                            No paintings found. Add one to get started.
+                            No paintings found.
                         </div>
                     )}
                 </div>
